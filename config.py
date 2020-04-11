@@ -1,7 +1,8 @@
 from nonebot.default_config import *
 
 # 超级用户
-SUPERUSERS = {674880178}
+SUPERUSERS = {674880178,1289817086,2336214857}
+OWNERS = {674880178}
 # 触发bot
 COMMAND_START = {'>','!',''}
 

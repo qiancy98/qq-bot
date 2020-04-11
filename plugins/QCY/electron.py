@@ -1,9 +1,9 @@
 from nonebot import on_command, CommandSession
 import random
 
-__plugin_name__ = '电疗'
+__plugin_name__ = '水群'
 __plugin_usage__ = r"""
-电疗
+水群
 
 电    获得随机电疗时间! (仅限群聊)
 """
