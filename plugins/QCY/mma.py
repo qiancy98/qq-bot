@@ -1,5 +1,5 @@
 from nonebot import on_command, CommandSession
-from config import SUPERUSERS
+from config import SUPERUSERS, SESSION_EXPIRE_TIMEOUT
 
 from wolframclient.evaluation import WolframLanguageSession  # MMA
 from wolframclient.language import wl, wlexpr  # MMA
@@ -24,6 +24,7 @@ async def mma(session: CommandSession, supermode = False, kernel_on={}):
     # 获取设置了名称的插件列表
     if session.event.detail_type =='group' or session.event.user_id in SUPERUSERS:
         cmd = session.get('cmd', prompt='请输入命令?')
+        # 首先是否关闭
         if cmd == "Exit[]":
             if session.event.user_id not in SUPERUSERS:
                 await session.send("错误: 权限不够, 无法关闭Wolfram Play.")
@@ -34,8 +35,10 @@ async def mma(session: CommandSession, supermode = False, kernel_on={}):
                 mma_session.terminate()
                 del kernel_on[1]
                 await session.send("已成功关闭Wolfram Play.")
+        # 然后输出状态
         elif cmd == "State[]":
             await session.send(f"Wolfram Play是否启动: {1 in kernel_on}")
+        # 都不是, 那么运行结果
         else:
             if (1 not in kernel_on):
                 kernel_on[1]=0
@@ -43,7 +46,31 @@ async def mma(session: CommandSession, supermode = False, kernel_on={}):
             if (supermode and session.event.user_id in SUPERUSERS):
                 await session.send(mma2_run(cmd))
             else:
-                await session.send(mma_run(cmd))
+                out = mma_run(cmd)
+                if (len(out)>=100):
+                    pos = 100
+                    await session.send(f"输出总长{len(out)}字符. 前100字符为:\n{out[:pos]}\n继续输出300字符请输入'y', 继续输出全部字符请输入'a', 从头全部输出请输入'A', 开启新的线程请等待{SESSION_EXPIRE_TIMEOUT}时间 或输入'n/N'. 只判断首字母.")
+                    state_dict = {
+                        'y': 300,
+                        'a': 2000,
+                        'A': -1,
+                        'n': -2,
+                        'N': -2,
+                    }
+                    # while (pos < len(out)):
+                    #     state = session.get('state', prompt=f'(此功能目前有bug →) 请继续/重新输入, 或等待线程超时.')
+                    #     if state[0] in state_dict:
+                    #         state_code = state_code[state[0]]
+                    #         if state_code == -2:
+                    #             break
+                    #         elif state_code == -1:
+                    #             await session.send(out)
+                    #             break
+                    #         else:
+                    #             await session.send(out[pos:pos+state_code])
+                    #             pos += state_code
+                else:
+                    await session.send(out)
     else:
         await session.send(f"错误: 权限不够, 无法使用mma.")
 
@@ -64,13 +91,10 @@ async def _(session: CommandSession):
     if not stripped_arg:
         # 用户没有发送有效的名称（而是发送了空白字符），则提示重新输入
         # 这里 session.pause() 将会发送消息并暂停当前会话（该行后面的代码不会被运行）
-        session.pause('qwq 没有找到mma命令诶, 请重新输入?')
+        session.pause('qwq 好像只有空白字符诶, 请重新输入?')
 
     # 如果当前正在向用户询问更多信息（例如本例中的要查询的命令），且用户输入有效，则放入会话状态
     session.state[session.current_key] = stripped_arg
-
-# def mma_run(cmd:str,this_user:int,users=dict()) -> str:
-#     return "此功能暂时下线"
 
 def mma_run(cmd:str) -> str:
     mma_session.evaluate(wlexpr(f'''out="";
@@ -82,7 +106,7 @@ def mma_run(cmd:str) -> str:
             ]
         ];'''))
     time.sleep(5)
-    s=mma_session.evaluate(wlexpr(f'''
+    return mma_session.evaluate(wlexpr(f'''
         TimeConstrained[
             While[LinkReadyQ@kernel,
                 x=LinkRead[kernel];
@@ -96,10 +120,6 @@ def mma_run(cmd:str) -> str:
             ];
         ,10,out="";out=out<>"输出时超时(10s)"];
         out'''))
-    if (len(s)>=100):
-        return "输出超过100字符. 前100字符为:\n" + s[:100]
-    else:
-        return s
 
 def mma2_run(cmd:str) -> str:
     return mma_session.evaluate(wlexpr(f'''
