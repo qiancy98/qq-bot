@@ -15,8 +15,12 @@ mma [command] 用wolfram语言计算 (仅限bot管理员) 时限30s, 空间256M
 wolfram [command] 同上
 """
 
+@on_command('mma2', aliases=[])
+async def mma2(session: CommandSession):
+    await mma(session,True)
+
 @on_command('mma', aliases=['mathematica','Mathematica','wolfram'])
-async def mma(session: CommandSession, kernel_on={}):
+async def mma(session: CommandSession, supermode = False, kernel_on={}):
     # 获取设置了名称的插件列表
     if session.event.detail_type =='group' or session.event.user_id in SUPERUSERS:
         cmd = session.get('cmd', prompt='请输入命令?')
@@ -36,11 +40,15 @@ async def mma(session: CommandSession, kernel_on={}):
             if (1 not in kernel_on):
                 kernel_on[1]=0
                 mma_session.evaluate(wlexpr(f'kernel=LinkLaunch[First[$CommandLine] <> " -wstp -noicon"]'))
-            await session.send(mma_run(cmd))
+            if (supermode and session.event.user_id in SUPERUSERS):
+                await session.send(mma2_run(cmd))
+            else:
+                await session.send(mma_run(cmd))
     else:
         await session.send(f"错误: 权限不够, 无法使用mma.")
 
 # 命令解析器用于将用户输入的参数解析成命令真正需要的数据
+@mma2.args_parser
 @mma.args_parser
 async def _(session: CommandSession):
     # 去掉消息首尾的空白符
@@ -74,7 +82,7 @@ def mma_run(cmd:str) -> str:
             ]
         ];'''))
     time.sleep(5)
-    return mma_session.evaluate(wlexpr(f'''
+    s=mma_session.evaluate(wlexpr(f'''
         TimeConstrained[
             While[LinkReadyQ@kernel,
                 x=LinkRead[kernel];
@@ -88,3 +96,14 @@ def mma_run(cmd:str) -> str:
             ];
         ,10,out="";out=out<>"输出时超时(10s)"];
         out'''))
+    if (len(s)>=100):
+        return "输出超过100字符. 前100字符为:\n" + s[:100]
+    else:
+        return s
+
+def mma2_run(cmd:str) -> str:
+    return mma_session.evaluate(wlexpr(f'''
+                MemoryConstrained[
+                    TimeConstrained[({cmd}) // ToString,30,"TLE(30s)"]
+                ,268435456,"MLE(256M)"]
+                '''))
