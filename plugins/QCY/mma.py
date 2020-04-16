@@ -7,12 +7,11 @@ import time
 
 mma_session=WolframLanguageSession()
 
-__plugin_name__ = 'Wolfram命令'
+__plugin_name__ = '命令'
 __plugin_usage__ = r"""
-Wolfram命令
+命令
 
-mma [command] 用wolfram语言计算 (仅限bot管理员) 时限30s, 空间256M
-wolfram [command] 同上
+mma [command] 用wolfram语言计算，时限30s，空间256M。如果5秒内没有返回结果，则会随附下一条输入返回。
 """
 
 @on_command('mma2', aliases=[])

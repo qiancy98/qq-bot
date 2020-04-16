@@ -4,6 +4,13 @@ from config import SUPERUSERS
 import time
 import os
 
+__plugin_name__ = '命令'
+__plugin_usage__ = r"""
+命令
+
+latex 此功能暂未开放。
+"""
+
 @on_command('latex', aliases=['LaTeX'])
 async def latex(session: CommandSession):
     if session.event.user_id in SUPERUSERS:

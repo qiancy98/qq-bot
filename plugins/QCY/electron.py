@@ -6,9 +6,10 @@ __plugin_usage__ = r"""
 水群
 
 电    获得随机电疗时间! (仅限群聊)
+    相同效果命令：'电疗','放电','电我','电电'
 """
 
-@on_command('电', aliases=('电疗','放电'))
+@on_command('电', aliases=('电疗','放电','电我','电电'))
 async def 电(session: CommandSession):
     if session.event.detail_type == "private":
         await session.send(f'这里是私聊哦!')
