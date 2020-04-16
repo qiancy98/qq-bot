@@ -49,7 +49,7 @@ async def mma(session: CommandSession, supermode = False, kernel_on={}):
                 out = mma_run(cmd)
                 if (len(out)>=100):
                     pos = 100
-                    await session.send(f"输出总长{len(out)}字符. 前100字符为:\n{out[:pos]}\n继续输出300字符请输入'y', 继续输出全部字符请输入'a', 从头全部输出请输入'A', 开启新的线程请等待{SESSION_EXPIRE_TIMEOUT}时间 或输入'n/N'. 只判断首字母.")
+                    await session.send(f"输出总长{len(out)}字符. 前100字符为:\n{out[:pos]}") #\n继续输出300字符请输入'y', 继续输出全部字符请输入'a', 从头全部输出请输入'A', 开启新的线程请等待{SESSION_EXPIRE_TIMEOUT}时间 或输入'n/N'. 只判断首字母.")
                     state_dict = {
                         'y': 300,
                         'a': 2000,
@@ -101,7 +101,7 @@ def mma_run(cmd:str) -> str:
         LinkWrite[kernel,
             EnterTextPacket[
                 MemoryConstrained[
-                    TimeConstrained[({cmd}) // ToString,30,out=out<>"TLE(30s)"]
+                    TimeConstrained[Unevaluated[({cmd}) // InputForm],30,out=out<>"TLE(30s)"]
                 ,268435456,out=out<>"MLE(256M)"]
             ]
         ];'''))
@@ -109,13 +109,14 @@ def mma_run(cmd:str) -> str:
     return mma_session.evaluate(wlexpr(f'''
         TimeConstrained[
             While[LinkReadyQ@kernel,
-                x=LinkRead[kernel];
-                Switch[x,
-                    _TextPacket,out=out<>ToString[x[[1]]]<>"\n",
-                    _ReturnTextPacket,out=out<>ToString[x[[1]]]<>"\n",
-                    _OutputNamePacket,out=out<>ToString[x[[1]]],
+                temp=LinkRead[kernel];
+                Switch[temp,
+                    _TextPacket,out=out<>ToString[temp[[1]]]<>"\n",
+                    _ReturnTextPacket,out=out<>ToString[temp[[1]]]<>"\n",
+                    _ReturnPacket,out=out<>ToString[temp[[1,1]]]<>"\n",
+                    _OutputNamePacket,out=out<>ToString[temp[[1]]],
                     _InputNamePacket,,
-                    _,out=out<>ToString[x]<>"\n"
+                    _,out=out<>ToString[temp]<>"\n"
                 ]
             ];
         ,10,out="";out=out<>"输出时超时(10s)"];

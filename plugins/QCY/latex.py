@@ -8,7 +8,8 @@ import os
 async def latex(session: CommandSession):
     if session.event.user_id in SUPERUSERS:
         cmd = session.get('cmd', prompt='请输入命令?')
-        latex_run(cmd)
+        tempfilename = "TEMP" + hex(hash(cmd) ^ time.time_ns())[1:]
+        latex_run(cmd,tempfilename)
         await session.send("Some Image here")
     else:
         await session.send(f"错误: 权限不够, 无法使用latex.")
@@ -34,7 +35,7 @@ async def _(session: CommandSession):
     # 如果当前正在向用户询问更多信息（例如本例中的要查询的命令），且用户输入有效，则放入会话状态
     session.state[session.current_key] = stripped_arg
 
-def latex_run(source: str)->str:
+def latex_run(source: str,tempfilename: str)->str:
     pre = r"""
     \documentclass[convert]{standalone}
 
@@ -55,13 +56,7 @@ def latex_run(source: str)->str:
     bak = r"""$
     \end{document}
     """
-    tempfilename = "TEMP" + hex(hash(source) ^ time.time_ns())[1:]
     with open(f"{tempfilename}.tex", "w") as file:
         file.write(pre + source + bak)
     if r := os.system(f"xelatex -interaction=nonstopmode -quiet -shell-escape {tempfilename}.tex > {tempfilename}.mylog"):
-        print(r)
-        if r == 124 or r == 128+9 or r == 31744:
-            time.sleep(15)
-        with open(f"{tempfilename}.log", "r") as file:
-            error = file.read()
-        raise RuntimeError(error[error.find("\n!"):error.find("Here is how much of")])
+        pass
