@@ -45,10 +45,11 @@ async def mma(session: CommandSession, supermode = False, kernel_on={}):
             if (supermode and session.event.user_id in SUPERUSERS):
                 await session.send(mma2_run(cmd))
             else:
+                FirstMaxLength = 200
                 out = mma_run(cmd)
-                if (len(out)>=100):
-                    pos = 100
-                    await session.send(f"输出总长{len(out)}字符. 前100字符为:\n{out[:pos]}") #\n继续输出300字符请输入'y', 继续输出全部字符请输入'a', 从头全部输出请输入'A', 开启新的线程请等待{SESSION_EXPIRE_TIMEOUT}时间 或输入'n/N'. 只判断首字母.")
+                if (len(out)>=FirstMaxLength):
+                    pos = FirstMaxLength
+                    await session.send(f"输出总长{len(out)}字符. 前{pos}字符为:\n{out[:pos]}") #\n继续输出300字符请输入'y', 继续输出全部字符请输入'a', 从头全部输出请输入'A', 开启新的线程请等待{SESSION_EXPIRE_TIMEOUT}时间 或输入'n/N'. 只判断首字母.")
                     state_dict = {
                         'y': 300,
                         'a': 2000,
