@@ -14,7 +14,7 @@ async def 电(session: CommandSession):
     if session.event.detail_type == "private":
         await session.send(f'这里是私聊哦!')
     elif session.event.detail_type == "group":
-        t = random.randint(1,3600)
+        t = random.randint(1,1800)+random.randint(1,1800)
         bot = session.bot
         await bot.set_group_ban(group_id=session.event.group_id,user_id=session.event.user_id,duration=t)
         await session.send(f'喵呜喵呜~ 这道闪电时长{t}秒哦w')
